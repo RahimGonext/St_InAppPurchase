@@ -170,6 +170,34 @@ class InAppPurchase {
     throw PlatformException(
         code: Platform.operatingSystem, message: "platform not supported");
   }
+
+  /// Get all non-consumed purchases made on `Android` and `iOS`.
+  ///
+  /// This is identical to [getPurchaseHistory] on `iOS`
+  Future<List<PurchasedItem>?> getAvailablePurchases() async {
+    if (Platform.isAndroid) {
+      dynamic result1 = await _channel.invokeMethod(
+        'getAvailableItemsByType',
+        <String, dynamic>{
+          'type': describeEnum(_TypeInApp.inapp),
+        },
+      );
+
+      dynamic result2 = await _channel.invokeMethod(
+        'getAvailableItemsByType',
+        <String, dynamic>{
+          'type': describeEnum(_TypeInApp.subs),
+        },
+      );
+      return extractPurchased(result1)! + extractPurchased(result2)!;
+    } else if (Platform.isIOS) {
+      dynamic result = await _channel.invokeMethod('getAvailableItems');
+
+      return extractPurchased(json.encode(result));
+    }
+    throw PlatformException(
+        code: Platform.operatingSystem, message: "platform not supported");
+  }
   /// Retrieves the user's purchase history on `Android` and `iOS` regardless of consumption status.
   ///
   /// Purchase history includes all types of products.
