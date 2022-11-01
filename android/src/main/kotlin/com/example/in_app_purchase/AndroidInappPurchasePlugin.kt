@@ -68,7 +68,12 @@ class AndroidInappPurchasePlugin internal constructor() : MethodCallHandler,
         }
 
         if (call.method == "manageSubscription") {
-            result.success(manageSubscription(call.argument<String>("sku")!!, call.argument<String>("packageName")!!))
+            result.success(
+                manageSubscription(
+                    call.argument<String>("sku")!!,
+                    call.argument<String>("packageName")!!
+                )
+            )
             return
         }
 
@@ -85,9 +90,10 @@ class AndroidInappPurchasePlugin internal constructor() : MethodCallHandler,
                 safeChannel.success("Already started. Call endConnection method if you want to start over.")
                 return
             }
-            billingClient = BillingClient.newBuilder(context!!).setListener(purchasesUpdatedListener)
-                .enablePendingPurchases()
-                .build()
+            billingClient =
+                BillingClient.newBuilder(context!!).setListener(purchasesUpdatedListener)
+                    .enablePendingPurchases()
+                    .build()
             initBIllingClientConnectio(safeChannel, call)
             return
         }
@@ -114,7 +120,18 @@ class AndroidInappPurchasePlugin internal constructor() : MethodCallHandler,
                 BillingError.E_NOT_PREPARED,
                 "IAP not prepared. Check if Google Play service is available."
             )
-            return
+
+            if (call.method == "getProducts") {
+                if (billingClient == null) {
+                    billingClient =
+                        BillingClient.newBuilder(context!!).setListener(purchasesUpdatedListener)
+                            .enablePendingPurchases()
+                            .build()
+                }
+                initBIllingClientConnectio(safeChannel, call)
+                getProductsByType(BillingClient.SkuType.INAPP, call, safeChannel)
+                return
+            }
         }
 
         when (call.method) {
@@ -244,7 +261,8 @@ class AndroidInappPurchasePlugin internal constructor() : MethodCallHandler,
         call: MethodCall,
         safeChannel: MethodResultWrapper
     ) {
-        val type = if (call.argument<String>("type") == "subs") BillingClient.SkuType.SUBS else BillingClient.SkuType.INAPP
+        val type =
+            if (call.argument<String>("type") == "subs") BillingClient.SkuType.SUBS else BillingClient.SkuType.INAPP
         val items = JSONArray()
         billingClient!!.queryPurchasesAsync(type) { billingResult, skuDetailsList ->
             if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
@@ -320,7 +338,8 @@ class AndroidInappPurchasePlugin internal constructor() : MethodCallHandler,
             acknowledgePurchaseParams,
             AcknowledgePurchaseResponseListener { billingResult ->
                 if (billingResult.responseCode != BillingClient.BillingResponseCode.OK) {
-                    val errorData = BillingError.getErrorFromResponseData(billingResult.responseCode)
+                    val errorData =
+                        BillingError.getErrorFromResponseData(billingResult.responseCode)
                     safeChannel.error(call.method, errorData.code, errorData.message)
                     return@AcknowledgePurchaseResponseListener
                 }
@@ -328,7 +347,8 @@ class AndroidInappPurchasePlugin internal constructor() : MethodCallHandler,
                     val item = JSONObject()
                     item.put("responseCode", billingResult.responseCode)
                     item.put("debugMessage", billingResult.debugMessage)
-                    val errorData = BillingError.getErrorFromResponseData(billingResult.responseCode)
+                    val errorData =
+                        BillingError.getErrorFromResponseData(billingResult.responseCode)
                     item.put("code", errorData.code)
                     item.put("message", errorData.message)
                     safeChannel.success(item.toString())
@@ -347,13 +367,15 @@ class AndroidInappPurchasePlugin internal constructor() : MethodCallHandler,
         call: MethodCall,
         safeChannel: MethodResultWrapper
     ) {
-        val type = if (call.argument<String>("type") == "subs") BillingClient.SkuType.SUBS else BillingClient.SkuType.INAPP
+        val type =
+            if (call.argument<String>("type") == "subs") BillingClient.SkuType.SUBS else BillingClient.SkuType.INAPP
 
         billingClient!!.queryPurchaseHistoryAsync(
             type,
             PurchaseHistoryResponseListener { billingResult, purchaseHistoryRecordList ->
                 if (billingResult.responseCode != BillingClient.BillingResponseCode.OK) {
-                    val errorData = BillingError.getErrorFromResponseData(billingResult.responseCode)
+                    val errorData =
+                        BillingError.getErrorFromResponseData(billingResult.responseCode)
                     safeChannel.error(call.method, errorData.code, errorData.message)
                     return@PurchaseHistoryResponseListener
                 }
@@ -373,7 +395,11 @@ class AndroidInappPurchasePlugin internal constructor() : MethodCallHandler,
                     return@PurchaseHistoryResponseListener
                 } catch (je: JSONException) {
                     je.printStackTrace()
-                    safeChannel.error(TAG, BillingError.E_BILLING_RESPONSE_JSON_PARSE_ERROR, je.message)
+                    safeChannel.error(
+                        TAG,
+                        BillingError.E_BILLING_RESPONSE_JSON_PARSE_ERROR,
+                        je.message
+                    )
                 }
             })
 
@@ -390,8 +416,8 @@ class AndroidInappPurchasePlugin internal constructor() : MethodCallHandler,
             skuList.add(skuArr[i])
         }
 
-        if (!billingClient?.isReady!!){
-            initBIllingClientConnectio(safeChannel,call)
+        if (!billingClient?.isReady!!) {
+            initBIllingClientConnectio(safeChannel, call)
         }
 
         billingClient!!.querySkuDetailsAsync(
@@ -445,7 +471,8 @@ class AndroidInappPurchasePlugin internal constructor() : MethodCallHandler,
         call: MethodCall,
         safeChannel: MethodResultWrapper
     ) {
-        val type = if (call.argument<String>("type") == "subs") BillingClient.SkuType.SUBS else BillingClient.SkuType.INAPP
+        val type =
+            if (call.argument<String>("type") == "subs") BillingClient.SkuType.SUBS else BillingClient.SkuType.INAPP
         val obfuscatedAccountId = call.argument<String>("obfuscatedAccountId")
         val obfuscatedProfileId = call.argument<String>("obfuscatedProfileId")
         val sku = call.argument<String>("sku")
@@ -536,8 +563,14 @@ class AndroidInappPurchasePlugin internal constructor() : MethodCallHandler,
                     item.put("developerPayloadAndroid", purchase.developerPayload)
                     val accountIdentifiers = purchase.accountIdentifiers
                     if (accountIdentifiers != null) {
-                        item.put("obfuscatedAccountIdAndroid", accountIdentifiers.obfuscatedAccountId)
-                        item.put("obfuscatedProfileIdAndroid", accountIdentifiers.obfuscatedProfileId)
+                        item.put(
+                            "obfuscatedAccountIdAndroid",
+                            accountIdentifiers.obfuscatedAccountId
+                        )
+                        item.put(
+                            "obfuscatedProfileIdAndroid",
+                            accountIdentifiers.obfuscatedProfileId
+                        )
                     }
                     safeResult!!.invokeMethod("purchase-updated", item.toString())
                     return@PurchasesUpdatedListener
