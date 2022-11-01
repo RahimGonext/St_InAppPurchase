@@ -88,44 +88,7 @@ class AndroidInappPurchasePlugin internal constructor() : MethodCallHandler,
             billingClient = BillingClient.newBuilder(context!!).setListener(purchasesUpdatedListener)
                 .enablePendingPurchases()
                 .build()
-            billingClient!!.startConnection(object : BillingClientStateListener {
-                private var alreadyFinished = false
-                override fun onBillingSetupFinished(billingResult: BillingResult) {
-                    try {
-                        val responseCode = billingResult.responseCode
-                        if (responseCode == BillingClient.BillingResponseCode.OK) {
-                            val item = JSONObject()
-                            item.put("connected", true)
-                            safeChannel.invokeMethod("connection-updated", item.toString())
-                            if (alreadyFinished) return
-                            alreadyFinished = true
-                            safeChannel.success("Billing client ready")
-                            return
-                        } else {
-                            val item = JSONObject()
-                            item.put("connected", false)
-                            safeChannel.invokeMethod("connection-updated", item.toString())
-                            if (alreadyFinished) return
-                            alreadyFinished = true
-                            safeChannel.error(call.method, "responseCode: $responseCode", "")
-                            return
-                        }
-                    } catch (je: JSONException) {
-                        je.printStackTrace()
-                    }
-                }
-
-                override fun onBillingServiceDisconnected() {
-                    try {
-                        val item = JSONObject()
-                        item.put("connected", false)
-                        safeChannel.invokeMethod("connection-updated", item.toString())
-                        return
-                    } catch (je: JSONException) {
-                        je.printStackTrace()
-                    }
-                }
-            })
+            initBIllingClientConnectio(safeChannel, call)
             return
         }
 
@@ -167,6 +130,50 @@ class AndroidInappPurchasePlugin internal constructor() : MethodCallHandler,
             else -> safeChannel.notImplemented()
         }
 
+    }
+
+    private fun initBIllingClientConnectio(
+        safeChannel: MethodResultWrapper,
+        call: MethodCall
+    ) {
+        billingClient!!.startConnection(object : BillingClientStateListener {
+            private var alreadyFinished = false
+            override fun onBillingSetupFinished(billingResult: BillingResult) {
+                try {
+                    val responseCode = billingResult.responseCode
+                    if (responseCode == BillingClient.BillingResponseCode.OK) {
+                        val item = JSONObject()
+                        item.put("connected", true)
+                        safeChannel.invokeMethod("connection-updated", item.toString())
+                        if (alreadyFinished) return
+                        alreadyFinished = true
+                        safeChannel.success("Billing client ready")
+                        return
+                    } else {
+                        val item = JSONObject()
+                        item.put("connected", false)
+                        safeChannel.invokeMethod("connection-updated", item.toString())
+                        if (alreadyFinished) return
+                        alreadyFinished = true
+                        safeChannel.error(call.method, "responseCode: $responseCode", "")
+                        return
+                    }
+                } catch (je: JSONException) {
+                    je.printStackTrace()
+                }
+            }
+
+            override fun onBillingServiceDisconnected() {
+                try {
+                    val item = JSONObject()
+                    item.put("connected", false)
+                    safeChannel.invokeMethod("connection-updated", item.toString())
+                    return
+                } catch (je: JSONException) {
+                    je.printStackTrace()
+                }
+            }
+        })
     }
 
     private fun manageSubscription(sku: String, packageName: String): Boolean {
@@ -381,6 +388,10 @@ class AndroidInappPurchasePlugin internal constructor() : MethodCallHandler,
         val skuList = ArrayList<String>()
         for (i in skuArr.indices) {
             skuList.add(skuArr[i])
+        }
+
+        if (!billingClient?.isReady!!){
+            initBIllingClientConnectio(safeChannel,call)
         }
 
         billingClient!!.querySkuDetailsAsync(

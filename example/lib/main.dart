@@ -56,7 +56,8 @@ class _MyAppState extends State<MyApp> {
         ),
         body: InkWell(
           onTap: () async {
-            print(await _inAppPurchasePlugin.isReady());
+            await _inAppPurchasePlugin.initialize();
+            await _inAppPurchasePlugin.getProducts(["test"]);
           },
           child: Center(
             child: Text('Running on: $_platformVersion\n'),
