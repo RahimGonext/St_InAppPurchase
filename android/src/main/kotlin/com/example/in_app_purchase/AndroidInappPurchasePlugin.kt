@@ -115,12 +115,6 @@ class AndroidInappPurchasePlugin internal constructor() : MethodCallHandler,
         }
 
         if (isReady != true) {
-            safeChannel.error(
-                call.method,
-                BillingError.E_NOT_PREPARED,
-                "IAP not prepared. Check if Google Play service is available."
-            )
-
             if (call.method == "getProducts") {
                 if (billingClient == null) {
                     billingClient =
@@ -130,6 +124,29 @@ class AndroidInappPurchasePlugin internal constructor() : MethodCallHandler,
                 }
                 initBIllingClientConnectio(safeChannel, call)
                 getProductsByType(BillingClient.SkuType.INAPP, call, safeChannel)
+                return
+            }
+
+            if (call.method == "getPurchaseHistoryByType") {
+                if (billingClient == null) {
+                    billingClient =
+                        BillingClient.newBuilder(context!!).setListener(purchasesUpdatedListener)
+                            .enablePendingPurchases()
+                            .build()
+                }
+                initBIllingClientConnectio(safeChannel, call)
+                getPurchaseHistoryByType(call, safeChannel)
+                return
+            }
+            if (call.method == "getAvailableItemsByType") {
+                if (billingClient == null) {
+                    billingClient =
+                        BillingClient.newBuilder(context!!).setListener(purchasesUpdatedListener)
+                            .enablePendingPurchases()
+                            .build()
+                }
+                initBIllingClientConnectio(safeChannel, call)
+                getAvailableItemsByType(call, safeChannel)
                 return
             }
         }
