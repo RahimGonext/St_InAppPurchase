@@ -52,6 +52,7 @@ class AndroidInappPurchasePlugin internal constructor() : MethodCallHandler,
     override fun onActivityResumed(activity: Activity) {}
     override fun onActivityPaused(activity: Activity) {}
     override fun onActivityDestroyed(activity: Activity) {
+
         if (this.activity === activity && context != null) {
             (context as Application?)!!.unregisterActivityLifecycleCallbacks(this)
             endBillingClientConnection()

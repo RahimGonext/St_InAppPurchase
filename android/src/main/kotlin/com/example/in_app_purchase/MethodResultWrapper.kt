@@ -12,19 +12,19 @@ class MethodResultWrapper internal constructor(
 ) : MethodChannel.Result {
     private val handler: Handler = Handler(Looper.getMainLooper())
     override fun success(result: Any?) {
-        handler.post { safeResult.success(result) }
+        handler.postDelayed({ safeResult.success(result) },50)
     }
 
     override fun error(errorCode: String, errorMessage: String?, errorDetails: Any?) {
-        handler.post { safeResult.error(errorCode, errorMessage, errorDetails) }
+        handler.postDelayed({ safeResult.error(errorCode, errorMessage, errorDetails)},50)
     }
 
     override fun notImplemented() {
-        handler.post { safeResult.notImplemented() }
+        handler.postDelayed({ safeResult.notImplemented() },50)
     }
 
     fun invokeMethod(method: String?, arguments: Any?) {
-        handler.post { safeChannel.invokeMethod(method!!, arguments, null) }
+        handler.postDelayed({ safeChannel.invokeMethod(method!!, arguments, null) },50)
     }
 
 }
