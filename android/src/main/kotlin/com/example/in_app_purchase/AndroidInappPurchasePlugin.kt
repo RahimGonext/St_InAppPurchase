@@ -448,44 +448,50 @@ class AndroidInappPurchasePlugin internal constructor() : MethodCallHandler,
             }
 
             skuDetailsList?.let{
-                for (sku in skuDetailsList!!) {
-                    if (!skus.contains(sku)) {
-                        skus.add(sku)
+                if (it.isNotEmpty()){
+                    for (sku in skuDetailsList!!) {
+                        if (!skus.contains(sku)) {
+                            skus.add(sku)
+                        }
                     }
                 }
+
             }
             skuDetailsList?.let{
-                try {
-                    val items = JSONArray()
-                    for (skuDetails in skuDetailsList) {
-                        val item = JSONObject()
-                        item.put("productId", skuDetails.sku)
-                        item.put("price", (skuDetails.priceAmountMicros / 1000000f).toString())
-                        item.put("currency", skuDetails.priceCurrencyCode)
-                        item.put("type", skuDetails.type)
-                        item.put("localizedPrice", skuDetails.price)
-                        item.put("title", skuDetails.title)
-                        item.put("description", skuDetails.description)
-                        item.put("introductoryPrice", skuDetails.introductoryPrice)
-                        item.put("subscriptionPeriodAndroid", skuDetails.subscriptionPeriod)
-                        item.put("freeTrialPeriodAndroid", skuDetails.freeTrialPeriod)
-                        item.put("introductoryPriceCyclesAndroid", skuDetails.introductoryPriceCycles)
-                        item.put("introductoryPricePeriodAndroid", skuDetails.introductoryPricePeriod)
-                        // new
-                        item.put("iconUrl", skuDetails.iconUrl)
-                        item.put("originalJson", skuDetails.originalJson)
-                        item.put("originalPrice", (skuDetails.priceAmountMicros / 1000000f).toDouble())
-                        items.put(item)
+                if (it.isNotEmpty()){
+                    try {
+                        val items = JSONArray()
+                        for (skuDetails in skuDetailsList) {
+                            val item = JSONObject()
+                            item.put("productId", skuDetails.sku)
+                            item.put("price", (skuDetails.priceAmountMicros / 1000000f).toString())
+                            item.put("currency", skuDetails.priceCurrencyCode)
+                            item.put("type", skuDetails.type)
+                            item.put("localizedPrice", skuDetails.price)
+                            item.put("title", skuDetails.title)
+                            item.put("description", skuDetails.description)
+                            item.put("introductoryPrice", skuDetails.introductoryPrice)
+                            item.put("subscriptionPeriodAndroid", skuDetails.subscriptionPeriod)
+                            item.put("freeTrialPeriodAndroid", skuDetails.freeTrialPeriod)
+                            item.put("introductoryPriceCyclesAndroid", skuDetails.introductoryPriceCycles)
+                            item.put("introductoryPricePeriodAndroid", skuDetails.introductoryPricePeriod)
+                            // new
+                            item.put("iconUrl", skuDetails.iconUrl)
+                            item.put("originalJson", skuDetails.originalJson)
+                            item.put("originalPrice", (skuDetails.priceAmountMicros / 1000000f).toDouble())
+                            items.put(item)
+                        }
+                        safeChannel.success(items.toString())
+                        return@querySkuDetailsAsync
+                    } catch (je: JSONException) {
+                        je.printStackTrace()
+                        safeChannel.error(TAG, BillingError.E_BILLING_RESPONSE_JSON_PARSE_ERROR, je.message)
+                    } catch (fe: FlutterException) {
+                        safeChannel.error(call.method, fe.message, fe.localizedMessage)
+                        return@querySkuDetailsAsync
                     }
-                    safeChannel.success(items.toString())
-                    return@querySkuDetailsAsync
-                } catch (je: JSONException) {
-                    je.printStackTrace()
-                    safeChannel.error(TAG, BillingError.E_BILLING_RESPONSE_JSON_PARSE_ERROR, je.message)
-                } catch (fe: FlutterException) {
-                    safeChannel.error(call.method, fe.message, fe.localizedMessage)
-                    return@querySkuDetailsAsync
                 }
+
             }
 
             return@querySkuDetailsAsync
