@@ -300,6 +300,7 @@ class AndroidInappPurchasePlugin internal constructor() : MethodCallHandler,
                     }
                     items.put(item)
                 }
+                android.util.Log.e("TAG", "getAvailableItemsByType: called again" )
                 safeChannel.success(items.toString())
             } else {
                 safeChannel.error(
